@@ -1,185 +1,44 @@
-dom-compare
-===========
+## About PCV
+PCV is a pure Python library for computer vision based on the book "Programming Computer Vision with Python" by Jan Erik Solem. 
 
-[![Build Status](https://travis-ci.org/Olegas/dom-compare.png)](https://travis-ci.org/Olegas/dom-compare)
-[![Coverage Status](https://coveralls.io/repos/Olegas/dom-compare/badge.png?branch=master)](https://coveralls.io/r/Olegas/dom-compare)
-[![NPM version](https://badge.fury.io/js/dom-compare.png)](http://badge.fury.io/js/dom-compare)
+More details on the book (and a pdf version of the latest draft) can be found at [programmingcomputervision.com](http://programmingcomputervision.com/).
 
-NodeJS module to compare two DOM-trees
+### Dependencies
+You need to have Python 2.6+ and as a minimum:
 
-  * [DOM Comparison](#dom-comparison)
-    * [Comparison options](#comparison-options)
-        * [Comments comparison](#comments-comparison)
-        * [Whitespace comparison](#whitespace-comparison)
-    * [Cli utility](#cli-utility)
-  * [DOM Canonic Form](#dom-canonic-form)
+* [NumPy](http://numpy.scipy.org/)
+* [Matplotlib](http://matplotlib.sourceforge.net/)
 
-Works with Node.JS v0.10+
+Some parts use:
 
-DOM Comparison
---------------
+* [SciPy](http://scipy.org/)
 
-Consider two documents. Expected:
-```xml
-<document>
-    <!-- comment -->
-    <element attribute="10" attributeX="100">
-        <text>  text content </text>
-        <inner>
-            <node />
-        </inner>
-    </element>
-    <![CDATA[  cdata node]]>
-</document>
-```
-and actual one:
-```xml
-<document>
-    <element attribute="100">
-        <text>text content</text>
-        <inner />
-        <inner2 />
-    </element>
-    <![CDATA[cdata node  ]]>
-</document>
-```
+Many sections show applications that require smaller specialized Python modules. See the book or the individual examples for full list of these dependencies. 
 
-One can compare them, get the result (is them equals, or not), and get extended report (why them are different).
+### Structure
 
-```javascript
-var compare = require('dom-compare').compare,
-    reporter = require('dom-compare').GroupingReporter,
-    expected = ..., // expected DOM tree
-    actual = ..., // actual one
-    result, diff, groupedDiff;
+*PCV/*  the code.
 
-// compare to DOM trees, get a result object
-result = compare(expected, actual);
+*pcv_book/*  contains a clean folder with the code exactly as used in the book at time of publication.
 
-// get comparison result
-console.log(result.getResult()); // false cause' trees are different
+*examples/*  contains sample code. Some examples use data available at [programmingcomputervision.com](http://programmingcomputervision.com/).
 
-// get all differences
-diff = result.getDifferences(); // array of diff-objects
+### Installation
 
-// differences, grouped by node XPath
-groupedDiff = reporter.getDifferences(result); // object, key - node XPATH, value - array of differences (strings)
+Open a terminal in the PCV directory and run (with sudo if needed on your system):
 
-// string representation
-console.log(reporter.report(result));
-```
+	python setup.py install
 
-Diff-object has a following form:
+Now you should be able to do
 
-```javascript
-{
-    node: "/document/element",
-    message: "Attribute 'attribute': expected value '10' instead of '100'";
-}
-```
+	import PCV
+	
+in your Python session or script. Try one of the sample code examples to check that the installation works.
 
-By using `GroupingReporter` one can get a result of a following type
+### License
 
-```javascript
-{
-    '/document/element': [
-        "Attribute 'attribute': expected value '10' instead of '100'",
-        "Extra attribute 'attributeX'"
-    ]    
-}
-```
-
-### Comparison options
-
-Comparison function can take a third argument with options like this:
-```javascript
-var options = {
-    stripSpaces: true,
-    compareComments: true,
-    collapseSpaces: true,
-    normalizeNewlines: true
-};
-
-result = compare(expected, actual, options);
-```
-#### Comments comparison
-By default, all comments are ignored. Set `compareComments` options to `true` to compare them too.
+All code in this project is provided as open source under the BSD license (2-clause "Simplified BSD License"). See LICENSE.txt. 
 
 
-#### Whitespace comparison
-By default, all text nodes (text, CDATA, comments if enabled as mentioned above) compared with respect 
-to leading, trailing, and internal whitespaces.
-Set `stripSpaces` option to `true` to automatically strip spaces in text and comment nodes. This option
-doesn't change the way CDATA sections is compared, they are always compared with respect to whitespaces.
-Set `collapseSpaces` option to `true` to automatically collapse all spaces in text and comment nodes.
-This option doesn't change the way CDATA sections is compared, they are always compared with respect to
-whitespaces.
-Set `normalizeNewlines` option to `true` to automatically normalize new line characters in text, 
-comment, and CDATA nodes.
-
-### Cli utility
-
-When installed globally with `npm install -g dom-compare` cli utility is available. 
-See usage information and command-line options with `domcompare --help`
-
-You can try it on bundled samples:
-```
-  $ cd samples
-  $ domcompare -s ./expected.xml ./actual.xml
-  Documents are not equal
-  /document/element
-      Attribute 'attribute': expected value '10' instead of '100'
-      Attribute 'attributeX' is missed
-      Extra element 'inner2'
-  /document/element/inner
-      Element 'node' is missed
-  /document
-      Expected CDATA value '  cdata node' instead of 'cdata node  '
-```
-  
-
-DOM Canonic Form
-----------------
-
-Implemented as [XMLSerializer](https://developer.mozilla.org/en-US/docs/XMLSerializer) interface
-
-
-Simple rules
- 1. Every node (text, node, attribute) on a new line
- 2. Empty tags - in a short form
- 3. Node indent - 4 spaces, attribute indent - 2 spaces
- 4. Attributes are sorted alphabetically
- 5. Attribute values are serialized in double quotes
-
-Consider the following XML-document...
-```xml
-<document>
-  <element>DOM Compare</element>
-  <emptyNode></emptyNode>
-  <element attribute1="value" attribute2="value">
-    <element>Text node</element>
-  </element>
-</document>
-```
-...and code snippet...
-```javascript
-var canonizingSerializer = new (require('dom-compare').XMLSerializer)();
-var doc = ...; // parse above document somehow 
-console.log(canonizingSerializer.serializeToString(doc));
-```
-You'll receive the following output
-```xml
-<document>
-    <element>
-        DOM Compare
-    </element>
-    <emptyNode />
-    <element
-      attribute1="value"
-      attribute2="value">
-        <element>
-            Text node
-        </element>
-    </element>
-</document>
-```
+---
+-Jan Erik Solem
